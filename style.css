@@ -535,6 +535,8 @@ body {
 /* 保留は右下に今の1/4程度でひっそり */
 .mini-holds { position: absolute; right: 0; bottom: 0; opacity: 0.8; }
 .mini-holds .holds { gap: 3px; }
+.mini-right { margin-top: 2px; font-size: 6px; line-height: 1; white-space: nowrap; text-align: center; color: #aaa; font-weight: bold; }
+.mini-right.on { color: #2e9e5b; }
 .mini-holds .hold { width: 14px; height: 14px; font-size: 7px; border-width: 1px; }
 .hold-caption { font-size: 10px; color: #aaa; margin-top: -8px; }
 
