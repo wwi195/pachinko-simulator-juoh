@@ -248,6 +248,8 @@ function stepCharge() {
   if (!event) return;
   addBalls(state.actual - before.actual);
   game.charge = state;
+  // サバンナチャンス中に1500発を得たら「ボーナス！」
+  v.bonus = v.judged && v.plan.kind === 'savanna' && state.nominal > before.nominal;
   const message = describeChargeEvent(event, state);
   v.message = message;
   v.history.unshift(stripTags(message));
@@ -517,7 +519,9 @@ function buildChargeScreen() {
     ? `<p class="zugara-title">図柄揃い！</p><p class="charge-title">チャージしろ！</p>`
     : c.phase === 'gai_recharge'
       ? `<p class="charge-title">チャージしろ！</p>`
-      : '';  // 保留消化中・終了時は見出しなし
+      : v.bonus
+        ? `<p class="bonus-title">ボーナス！</p>`
+        : '';  // 保留消化中・終了時は見出しなし
 
   return `<div class="screen">
     ${banner}

@@ -533,6 +533,13 @@ body {
   animation: rush-rainbow 3s linear infinite;
 }
 /* 保留は右下に今の1/4程度でひっそり */
+.bonus-title {
+  font-size: 30px; font-weight: bold; letter-spacing: 2px;
+  background: linear-gradient(90deg, #c8102e, #c9a227, #2e9e5b, #1e6fd9, #e0559a, #c8102e);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: rush-rainbow 2s linear infinite;
+}
 .mini-holds { position: absolute; right: 0; bottom: 0; opacity: 0.8; }
 .mini-holds .holds { gap: 3px; }
 .mini-right { margin-top: 2px; font-size: 6px; line-height: 1; white-space: nowrap; text-align: center; color: #aaa; font-weight: bold; }
