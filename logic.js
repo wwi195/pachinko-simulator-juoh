@@ -150,6 +150,33 @@ function applyChargeStep(state, rng = Math.random) {
   }
 }
 
+// ---- judgment（保留チャージ直後の告知） ----
+// 保留チャージの時点でチャージの最後まで抽選を済ませ、結果に応じて judgment 前の表記を決める。
+// 3000BONUSは必ず「or 3000」。サバンナチャンスは34.3%で「or 3000」（全体で約1/3が「or 3000」）。
+// それ以外は「or 1500」。
+
+const P_SC_LABEL_3000 = 0.343;
+const JUDGE_LABEL_1500 = 'サバンナチャンス or 1500ボーナス';
+const JUDGE_LABEL_3000 = 'サバンナチャンス or 3000ボーナス';
+
+// 初回当該の直後(phase:'holds')の状態から 'done' までの手順をすべて先に抽選して返す
+function planCharge(state, rng = Math.random) {
+  const steps = [];
+  let cur = state;
+  while (cur.phase !== 'done') {
+    const step = applyChargeStep(cur, rng);
+    steps.push(step);
+    cur = step.state;
+  }
+  return { steps, final: cur, kind: classifyCharge(cur.nominal) };
+}
+
+function rollJudgeLabel(kind, rng = Math.random) {
+  if (kind === 'b3000') return JUDGE_LABEL_3000;
+  if (kind === 'savanna' && rng() < P_SC_LABEL_3000) return JUDGE_LABEL_3000;
+  return JUDGE_LABEL_1500;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     SPIN_RATE_OPTIONS, DEFAULT_SPIN_RATE, calcSpinCost,
@@ -158,5 +185,6 @@ if (typeof module !== 'undefined' && module.exports) {
     P_RUSH, RUSH_ST_COUNT, createRushState, applyRushSpin,
     P_CHARGE, P_RECHARGE, HOLD_MAX, CHARGE_HIT_NOMINAL, CHARGE_HIT_ACTUAL, SAVANNA_THRESHOLD,
     rollUntilHit, fillHolds, classifyCharge, createChargeState, applyChargeStep,
+    P_SC_LABEL_3000, JUDGE_LABEL_1500, JUDGE_LABEL_3000, planCharge, rollJudgeLabel,
   };
 }

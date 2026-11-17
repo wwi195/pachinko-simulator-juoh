@@ -220,3 +220,40 @@ test('rollRushEntry', () => {
   assert.equal(L.rollRushEntry(seq([0.49])), true);
   assert.equal(L.rollRushEntry(seq([0.5])), false);
 });
+
+// ---- judgment ----
+
+test('planCharge: 保留全ハズレは1500で終わり、表記は or 1500', () => {
+  let s = L.createChargeState();
+  // 当該1回転目で当たり、保留4個すべてハズレ
+  s = L.applyChargeStep(s, seq([H, M, M, M, M])).state;
+  const plan = L.planCharge(s, seq([]));
+  assert.equal(plan.kind, 'b1500');
+  assert.equal(plan.final.nominal, 1500);
+  assert.equal(plan.steps.length, 4);
+  assert.equal(L.rollJudgeLabel(plan.kind, seq([])), L.JUDGE_LABEL_1500);
+});
+
+test('planCharge: 3000BONUSの表記は必ず or 3000', () => {
+  let s = L.createChargeState();
+  s = L.applyChargeStep(s, seq([H, H, M, M, M])).state;
+  const plan = L.planCharge(s, seq([0.99])); // 保留1で当たり、再チャージ失敗
+  assert.equal(plan.kind, 'b3000');
+  assert.equal(L.rollJudgeLabel('b3000', seq([])), L.JUDGE_LABEL_3000);
+});
+
+test('rollJudgeLabel: サバンナチャンスは34.3%で or 3000', () => {
+  assert.equal(L.rollJudgeLabel('savanna', seq([0.3])), L.JUDGE_LABEL_3000);
+  assert.equal(L.rollJudgeLabel('savanna', seq([0.5])), L.JUDGE_LABEL_1500);
+});
+
+test('表記の割合: or 3000 が約1/3', () => {
+  let n3000 = 0; const N = 50000;
+  for (let i = 0; i < N; i++) {
+    const s = L.applyChargeStep(L.createChargeState()).state;
+    const plan = L.planCharge(s);
+    if (L.rollJudgeLabel(plan.kind) === L.JUDGE_LABEL_3000) n3000++;
+  }
+  const r = n3000 / N;
+  assert.ok(r > 0.31 && r < 0.36, String(r));
+});

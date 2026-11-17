@@ -172,7 +172,7 @@ function runRushSpin(opts = {}) {
 
   game.totalRushHits++;
   game.charge = createChargeState();
-  game.chargeView = { spinsThisCycle: game.rushCycleSpins, message: '', history: [], savannaShown: false };
+  game.chargeView = { spinsThisCycle: game.rushCycleSpins, message: '', history: [], plan: null, idx: 0, label: null, judged: false };
   game.rushCycleSpins = 0;
   addLog(`${game.chargeView.spinsThisCycle}回転で当選！ チャージ！`, 'rush');
   setState('charge');
@@ -232,24 +232,47 @@ function stripTags(html) {
 }
 
 // 1手進める。持ち球は当たりのたびにその場で加算する
+// 保留チャージ後は、先に抽選済みの手順(plan)を1つずつ再生する
 function stepCharge() {
   const before = game.charge;
-  const { state, event } = applyChargeStep(before);
+  const v = game.chargeView;
+  let step;
+  if (v.plan) {
+    if (v.idx >= v.plan.steps.length) return;
+    step = v.plan.steps[v.idx++];
+  } else {
+    step = applyChargeStep(before);
+  }
+  const { state, event } = step;
   if (!event) return;
   addBalls(state.actual - before.actual);
   game.charge = state;
   const message = describeChargeEvent(event, state);
-  game.chargeView.message = message;
-  game.chargeView.history.unshift(stripTags(message));
-  if (!game.chargeView.savannaShown && state.nominal >= SAVANNA_THRESHOLD) {
-    game.chargeView.savannaShown = true;
-    addLog('サバンナチャンス突入！', 'sc');
-  }
+  v.message = message;
+  v.history.unshift(stripTags(message));
 }
 
+// 初回の当該抽選。保留チャージの時点で最後まで抽選し、judgment前の表記を決める
 function handleChargeStep() {
+  const v = game.chargeView;
   stepCharge();
+  if (!v.plan) {
+    v.plan = planCharge(game.charge);
+    v.label = rollJudgeLabel(v.plan.kind);
+  }
   setState('charge');
+}
+
+function handleJudgment() {
+  const v = game.chargeView;
+  v.judged = true;
+  if (v.plan.kind === 'savanna') {
+    addLog('サバンナチャンス突入！', 'sc');
+    setState('charge');
+    return;
+  }
+  while (game.charge.phase !== 'done') stepCharge();
+  handleChargeFinish();
 }
 
 function handleChargeSkip() {
@@ -272,7 +295,7 @@ function handleChargeFinish() {
     s.scMax = Math.max(s.scMax, nominal);
     addLog(`サバンナチャンス ${nominal.toLocaleString()}発 (${game.rush.chainCount}連)`, 'sc');
   } else {
-    addLog(`${nominal}BONUS (${game.rush.chainCount}連)`, 'rush');
+    addLog(`${nominal}ボーナス (${game.rush.chainCount}連)`, 'rush');
   }
   game.pending = { kind, nominal, actual };
   setState('charge_result');
@@ -386,7 +409,7 @@ function renderHeader() {
 
 function renderModeBadge() {
   const el = document.getElementById('mode-badge');
-  if (game.charge && game.charge.nominal >= SAVANNA_THRESHOLD) {
+  if (game.charge && game.chargeView.judged && game.chargeView.plan.kind === 'savanna') {
     el.textContent = 'サバンナチャンス';
     el.className = 'savanna';
   } else if (game.charge) {
@@ -439,8 +462,8 @@ function buildHoldsHtml(holds) {
   const slots = [];
   for (let i = 0; i < HOLD_MAX; i++) {
     if (i < holds.length) {
-      const win = holds[i];
-      slots.push(`<div class="hold c${i} ${win ? 'win' : 'lose'}">${win ? '◎' : '×'}</div>`);
+      // 当落は隠して全部○で表示する（消化したときに分かる）
+      slots.push(`<div class="hold c${i}">○</div>`);
     } else {
       slots.push(`<div class="hold empty">・</div>`);
     }
@@ -451,8 +474,21 @@ function buildHoldsHtml(holds) {
 function buildChargeScreen() {
   const c = game.charge;
   const v = game.chargeView;
-  const isSavanna = c.nominal >= SAVANNA_THRESHOLD;
+  const isSavanna = v.judged && v.plan.kind === 'savanna';
   const banner = isSavanna ? `<div class="savanna-banner">サバンナチャンス</div>` : '';
+
+  // 保留チャージ直後：表記と judgment ボタン
+  if (v.plan && !v.judged) {
+    return `<div class="screen">
+    <p class="charge-title">チャージ！</p>
+    <p class="charge-total">累計 <span>${c.nominal.toLocaleString()}</span> 発</p>
+    ${buildHoldsHtml(c.holds)}
+    <p class="hold-caption">保留チャージ完了</p>
+    <div class="charge-event">${v.message}</div>
+    <p class="judge-label">${v.label}</p>
+    <div class="charge-btns"><button class="btn-action btn-judge" onclick="handleJudgment()">judgment</button></div>
+  </div>`;
+  }
 
   let mainBtn;
   if (c.phase === 'gai_initial') mainBtn = `<button class="btn-action" onclick="handleChargeStep()">▶ 当該抽選</button>`;
@@ -477,7 +513,7 @@ function buildChargeScreen() {
       <span class="right-badge ${c.recharge ? 'on' : ''}">再チャージ権利 ${c.recharge ? 'あり' : 'なし'}</span>
     </div>
     ${buildHoldsHtml(c.holds)}
-    <p class="hold-caption">保留（左から消化）　◎当たり ×ハズレ</p>
+    <p class="hold-caption">保留（左から消化）</p>
     <div class="charge-event">${message}</div>
     <div class="charge-btns">${mainBtn}${skipBtn}</div>
     <div class="charge-history">${v.history.map(h => `<div>${h}</div>`).join('')}</div>
@@ -569,7 +605,7 @@ function buildScreen(state) {
 
     case 'charge_result': {
       const { kind, nominal, actual } = game.pending;
-      const title = kind === 'savanna' ? 'サバンナチャンス' : `${nominal}BONUS`;
+      const title = kind === 'savanna' ? 'サバンナチャンス' : `${nominal}ボーナス`;
       const cls = kind === 'savanna' ? 'savanna' : kind === 'b3000' ? 'premium' : 'standard';
       return `<div class="screen">
         <p class="chain-label">${game.rush.chainCount + 1}連チャン</p>
@@ -585,8 +621,8 @@ function buildScreen(state) {
     case 'rush_result': {
       const s = game.session;
       const lines = [resultRow('初当たり（チャレンジ）', `${FIRST_HIT_NOMINAL}発`)];
-      if (s.b1500)   lines.push(resultRow('1500BONUS', `×${s.b1500}回`));
-      if (s.b3000)   lines.push(resultRow('3000BONUS', `×${s.b3000}回`));
+      if (s.b1500)   lines.push(resultRow('1500ボーナス', `×${s.b1500}回`));
+      if (s.b3000)   lines.push(resultRow('3000ボーナス', `×${s.b3000}回`));
       if (s.savanna) lines.push(resultRow('サバンナチャンス', `×${s.savanna}回（最高${s.scMax.toLocaleString()}発）`));
       return `<div class="screen">
         <p class="rush-result-title">獣王RUSH リザルト</p>

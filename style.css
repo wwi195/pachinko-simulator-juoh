@@ -517,6 +517,8 @@ body {
 .hold.win  { color: #c8102e; background: #fff4e0; }
 .hold.lose { color: #bbb; }
 .hold.empty { border-style: dashed; border-color: #ddd; color: #ddd; }
+.judge-label { font-size: 18px; font-weight: bold; color: #c8102e; text-align: center; }
+.btn-judge { letter-spacing: 2px; }
 .hold-caption { font-size: 10px; color: #aaa; margin-top: -8px; }
 
 .charge-event {
