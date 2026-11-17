@@ -174,7 +174,7 @@ function runRushSpin(opts = {}) {
   game.charge = createChargeState();
   game.chargeView = { spinsThisCycle: game.rushCycleSpins, message: '', history: [], plan: null, idx: 0, label: null, judged: false };
   game.rushCycleSpins = 0;
-  addLog(`${game.chargeView.spinsThisCycle}回転で当選！ チャージ！`, 'rush');
+  addLog(`${game.chargeView.spinsThisCycle}回転で図柄揃い！ チャージしろ！`, 'rush');
   setState('charge');
   return true;
 }
@@ -214,7 +214,7 @@ function describeChargeEvent(event, state) {
     let text = `${head}：1/4.13を回して<b>${event.spins}回転目</b>で大当たり <span class="plus">＋1500</span>${total}`;
     if (!event.initial) {
       text += event.recharge
-        ? ' <span class="ok">再チャージ成功！</span>'
+        ? ' <span class="ok">再チャージ成功！チャージしろ！</span>'
         : ' <span class="ng">再チャージ失敗</span>';
     }
     return text;
@@ -222,7 +222,7 @@ function describeChargeEvent(event, state) {
   if (!event.hit) return '× ハズレ';
   let text = `◎ 大当たり <span class="plus">＋1500</span>${total}`;
   text += event.rechargeResult
-    ? ' <span class="ok">再チャージ成功！保留補充</span>'
+    ? ' <span class="ok">再チャージ成功！チャージしろ！</span>'
     : ' <span class="ng">再チャージ失敗</span>';
   return text;
 }
@@ -500,13 +500,19 @@ function buildChargeScreen() {
     : `<button class="btn-sub" onclick="handleChargeSkip()">最後まで</button>`;
 
   let message = v.message;
-  if (!message) message = `${v.spinsThisCycle}回転で当選！ チャージ！`;
-  else if (c.phase === 'gai_recharge') message += '<br>保留切れ → 再チャージの当該へ';
+  if (!message) message = `${v.spinsThisCycle}回転で当選！`;
+  else if (c.phase === 'gai_recharge') message += '<br>保留切れ → <b>チャージしろ！</b>';
   else if (c.phase === 'done') message += '<br>保留切れ → 終了';
+
+  const title = c.phase === 'gai_initial'
+    ? `<p class="zugara-title">図柄揃い！</p><p class="charge-title">チャージしろ！</p>`
+    : c.phase === 'gai_recharge'
+      ? `<p class="charge-title">チャージしろ！</p>`
+      : `<p class="charge-title">チャージ！</p>`;
 
   return `<div class="screen">
     ${banner}
-    <p class="charge-title">チャージ！</p>
+    ${title}
     <p class="charge-total">累計 <span>${c.nominal.toLocaleString()}</span> 発</p>
     <div class="charge-meta">
       <span>大当たり ${c.hits}回</span>
