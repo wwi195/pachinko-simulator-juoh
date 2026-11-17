@@ -248,7 +248,7 @@ function stepCharge() {
   if (!event) return;
   addBalls(state.actual - before.actual);
   game.charge = state;
-  // サバンナチャンス中に1500発を得たら「ボーナス！」
+  // サバンナチャンス中に1500発を得たら「上乗せ！」
   v.bonus = v.judged && v.plan.kind === 'savanna' && state.nominal > before.nominal;
   const message = describeChargeEvent(event, state);
   v.message = message;
@@ -520,7 +520,7 @@ function buildChargeScreen() {
     : c.phase === 'gai_recharge'
       ? `<p class="charge-title">チャージしろ！</p>`
       : v.bonus
-        ? `<p class="bonus-title">ボーナス！</p>`
+        ? `<p class="bonus-title">上乗せ！</p>`
         : '';  // 保留消化中・終了時は見出しなし
 
   return `<div class="screen">
