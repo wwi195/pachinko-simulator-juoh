@@ -498,7 +498,7 @@ body {
 .charge-total span { font-size: 34px; font-weight: bold; color: #c9a227; }
 .charge-meta { display: flex; gap: 10px; align-items: center; font-size: 13px; color: #666; }
 .right-badge {
-  font-size: 12px; font-weight: bold; padding: 3px 10px; border-radius: 12px;
+  font-size: 8px; font-weight: bold; padding: 2px 7px; border-radius: 8px;
   border: 1px solid #ddd; color: #aaa; background: #f6f6f6;
 }
 .right-badge.on { border-color: #2e9e5b; color: #fff; background: #2e9e5b; }
