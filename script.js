@@ -471,6 +471,16 @@ function buildHoldsHtml(holds) {
   return `<div class="holds">${slots.join('')}</div>`;
 }
 
+// 保留が並んでいた位置に獲得出玉（表示発数）を大きく出し、保留は右下に小さく置く
+// 10000発を超えたらレインボー、それまでは金色
+function buildPayoutHtml(nominal, holds) {
+  const cls = nominal > 10000 ? 'payout-num rainbow' : 'payout-num';
+  return `<div class="payout-area">
+    <p class="${cls}">${nominal.toLocaleString()}<span class="payout-unit">発</span></p>
+    <div class="mini-holds">${buildHoldsHtml(holds)}</div>
+  </div>`;
+}
+
 function buildChargeScreen() {
   const c = game.charge;
   const v = game.chargeView;
@@ -481,9 +491,7 @@ function buildChargeScreen() {
   if (v.plan && !v.judged) {
     return `<div class="screen">
     <p class="charge-title">チャージ！</p>
-    <p class="charge-total">累計 <span>${c.nominal.toLocaleString()}</span> 発</p>
-    ${buildHoldsHtml(c.holds)}
-    <p class="hold-caption">保留チャージ完了</p>
+    ${buildPayoutHtml(c.nominal, c.holds)}
     <div class="charge-event">${v.message}</div>
     <p class="judge-label">${v.label}</p>
     <div class="charge-btns"><button class="btn-action btn-judge" onclick="handleJudgment()">judgment</button></div>
@@ -513,13 +521,11 @@ function buildChargeScreen() {
   return `<div class="screen">
     ${banner}
     ${title}
-    <p class="charge-total">累計 <span>${c.nominal.toLocaleString()}</span> 発</p>
     <div class="charge-meta">
       <span>大当たり ${c.hits}回</span>
       <span class="right-badge ${c.recharge ? 'on' : ''}">再チャージ権利 ${c.recharge ? 'あり' : 'なし'}</span>
     </div>
-    ${buildHoldsHtml(c.holds)}
-    <p class="hold-caption">保留（左から消化）</p>
+    ${buildPayoutHtml(c.nominal, c.holds)}
     <div class="charge-event">${message}</div>
     <div class="charge-btns">${mainBtn}${skipBtn}</div>
     <div class="charge-history">${v.history.map(h => `<div>${h}</div>`).join('')}</div>

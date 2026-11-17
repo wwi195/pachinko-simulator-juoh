@@ -520,6 +520,20 @@ body {
 .zugara-title { font-size: 30px; font-weight: bold; color: #c9a227; margin-bottom: -10px; letter-spacing: 2px; }
 .judge-label { font-size: 18px; font-weight: bold; color: #c8102e; text-align: center; }
 .btn-judge { letter-spacing: 2px; }
+/* 獲得出玉（保留の位置に大きく） */
+.payout-area { position: relative; width: 100%; max-width: 320px; text-align: center; padding: 4px 0 18px; }
+.payout-num { font-size: 54px; font-weight: bold; line-height: 1.1; color: #c9a227; letter-spacing: 1px; }
+.payout-unit { font-size: 20px; margin-left: 4px; }
+.payout-num.rainbow {
+  background: linear-gradient(90deg, #c8102e, #c9a227, #2e9e5b, #1e6fd9, #e0559a, #c8102e);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: rush-rainbow 3s linear infinite;
+}
+/* 保留は右下に今の1/4程度でひっそり */
+.mini-holds { position: absolute; right: 0; bottom: 0; opacity: 0.8; }
+.mini-holds .holds { gap: 3px; }
+.mini-holds .hold { width: 14px; height: 14px; font-size: 7px; border-width: 1px; }
 .hold-caption { font-size: 10px; color: #aaa; margin-top: -8px; }
 
 .charge-event {
