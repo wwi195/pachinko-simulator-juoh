@@ -92,7 +92,8 @@ function runNormalSpin() {
 
 function handleStart() {
   if (checkEigyoAlert()) return;
-  if (!runNormalSpin()) setState('lose_result');
+  // ハズレは画面を切り替えず、そのまま続けて押せるようにする
+  if (!runNormalSpin()) setState('normal_idle');
 }
 
 function autoSpin(count) {
