@@ -42,9 +42,9 @@ test('spinNormal: 当たり・偽先咆哮・はずれ', () => {
   assert.equal(L.spinNormal(seq([0.5, 0.5])), 'miss');
 });
 
-test('偽先咆哮の確率は信頼度40%になる量', () => {
+test('偽先咆哮の確率は信頼度60%になる量', () => {
   const p = L.falseEnzokuProbability();
-  assert.ok(Math.abs(L.P_HIT / (L.P_HIT + p) - 0.4) < 1e-12);
+  assert.ok(Math.abs(L.P_HIT / (L.P_HIT + p) - 0.6) < 1e-12);
 });
 
 // ---- チャージ補助 ----

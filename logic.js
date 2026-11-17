@@ -13,14 +13,14 @@ function calcSpinCost(spinRate) {
 // ---- 通常時 ----
 
 const P_HIT = 1 / 319.7;
-const ENZOKU_CONFIDENCE = 40; // 先咆哮の信頼度(%)
+const ENZOKU_CONFIDENCE = 60; // 先咆哮の信頼度(%)
 
 function falseEnzokuProbability() {
   return P_HIT * ((100 - ENZOKU_CONFIDENCE) / ENZOKU_CONFIDENCE);
 }
 
 // 当たり(P_HIT)と、外れなのに先咆哮が出る偽陽性の合算が先咆哮の発生率。
-// その中で本物が占める割合が信頼度(40%)になる。
+// その中で本物が占める割合が信頼度(60%)になる。
 function spinNormal(rng = Math.random) {
   if (rng() < P_HIT) return 'hit';
   if (rng() < falseEnzokuProbability()) return 'false_enzoku';
