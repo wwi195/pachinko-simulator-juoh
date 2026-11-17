@@ -517,7 +517,7 @@ function buildChargeScreen() {
     ? `<p class="zugara-title">図柄揃い！</p><p class="charge-title">チャージしろ！</p>`
     : c.phase === 'gai_recharge'
       ? `<p class="charge-title">チャージしろ！</p>`
-      : `<p class="charge-title">チャージ！</p>`;
+      : '';  // 保留消化中・終了時は見出しなし
 
   return `<div class="screen">
     ${banner}
