@@ -240,6 +240,8 @@ body {
 }
 
 /* RUSH(ST) */
+.rush-total { font-size: 14px; color: #888; margin-bottom: -8px; }
+.rush-total span { font-size: 28px; font-weight: bold; color: #c9a227; }
 .rush-title {
   font-size: 22px;
   font-weight: bold;

@@ -593,6 +593,7 @@ function buildScreen(state) {
       const skipDisabled = game.rush.stRemaining <= 10;
       return `<div class="screen">
         <p class="chain-label">${game.rush.chainCount + 1}連チャン中</p>
+        <p class="rush-total">獲得 <span>${game.session.nominal.toLocaleString()}</span> 発</p>
         <p class="rush-title">獣王RUSH</p>
         <p class="rush-sub">ST残り <span>${game.rush.stRemaining}</span> 回</p>
         <div class="rush-spin-btns">
