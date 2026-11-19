@@ -445,11 +445,13 @@ function renderModeBadge() {
 
 // 勝負ボタン：押した瞬間に弾ける演出を見せてから結果へ進む
 const HYPE_DELAY_MS = 520;
-function hype(btn, fn) {
+// isWin: 成否を返す関数。decideBefore が true なら押す前に、false なら結果処理の後に評価する
+function hype(btn, fn, isWin, decideBefore = false) {
   if (btn.dataset.fired) return;
   btn.dataset.fired = '1';
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce) { fn(); return; }
+  const preWin = decideBefore && isWin ? isWin() : null;
 
   btn.classList.add('fired');
   const burst = document.createElement('span');
@@ -473,7 +475,53 @@ function hype(btn, fn) {
   setTimeout(() => flash.remove(), 700);
 
   if (navigator.vibrate) navigator.vibrate([30, 40, 70]);
-  setTimeout(() => { screen.classList.remove('shake'); fn(); }, HYPE_DELAY_MS);
+  setTimeout(() => {
+    screen.classList.remove('shake');
+    fn();
+    if (isWin) revealResult(decideBefore ? preWin : isWin());
+  }, HYPE_DELAY_MS);
+}
+
+// 結果が出た瞬間の演出：成功は金の光条＋紙吹雪＋叩きつけ、失敗は暗転して沈む
+function revealResult(win) {
+  const screen = document.getElementById('main-screen');
+  const view = screen.querySelector('.screen');
+  if (!view) return;
+  screen.querySelectorAll('.reveal-fx').forEach(el => el.remove());
+
+  if (win) {
+    view.classList.add('reveal-win');
+    const glory = document.createElement('div');
+    glory.className = 'reveal-fx glory';
+    screen.appendChild(glory);
+    const rain = document.createElement('div');
+    rain.className = 'reveal-fx confetti';
+    for (let i = 0; i < 28; i++) {
+      const c = document.createElement('i');
+      c.style.left = `${Math.random() * 100}%`;
+      c.style.animationDelay = `${Math.random() * 0.5}s`;
+      c.style.animationDuration = `${1.2 + Math.random() * 0.9}s`;
+      c.style.setProperty('--r', `${Math.random() * 720 - 360}deg`);
+      c.style.setProperty('--x', `${Math.random() * 60 - 30}px`);
+      rain.appendChild(c);
+    }
+    screen.appendChild(rain);
+    const flash = document.createElement('div');
+    flash.className = 'hype-flash win';
+    document.getElementById('app').appendChild(flash);
+    void screen.offsetWidth;
+    screen.classList.add('shake-big');
+    setTimeout(() => { flash.remove(); screen.classList.remove('shake-big'); }, 900);
+    setTimeout(() => { glory.remove(); rain.remove(); }, 2600);
+    if (navigator.vibrate) navigator.vibrate([80, 50, 80, 50, 260]);
+  } else {
+    view.classList.add('reveal-lose');
+    const gloom = document.createElement('div');
+    gloom.className = 'reveal-fx gloom';
+    screen.appendChild(gloom);
+    setTimeout(() => gloom.remove(), 1600);
+    if (navigator.vibrate) navigator.vibrate(25);
+  }
 }
 
 function renderMainScreen() {
@@ -546,7 +594,7 @@ function buildChargeScreen() {
     ${buildPayoutHtml(c.nominal, c.holds, c.recharge)}
     <div class="charge-event">${v.message}</div>
     <p class="judge-label">${v.label}</p>
-    <div class="charge-btns"><button class="btn-action btn-judge btn-hype" onclick="hype(this, handleJudgment)">judgment</button></div>
+    <div class="charge-btns"><button class="btn-action btn-judge btn-hype" onclick="hype(this, handleJudgment, () => game.chargeView.plan.kind === 'savanna', true)">judgment</button></div>
   </div>`;
   }
 
@@ -681,7 +729,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="add-rush-title">獣王RUSHチャレンジ！</p>
         <p class="result-sub">成功率 ${Math.round(P_RUSH_ENTRY * 100)}%</p>
-        <button class="btn-action btn-hype" onclick="hype(this, handleRushEntryJudge)">▶ チャレンジ</button>
+        <button class="btn-action btn-hype" onclick="hype(this, handleRushEntryJudge, () => game.state === 'rush_entry_win')">▶ チャレンジ</button>
       </div>`;
 
     case 'rush_entry_win':
