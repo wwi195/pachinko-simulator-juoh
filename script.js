@@ -21,6 +21,7 @@ const game = {
   pending: {},
   eigyoAlertShown: false,
   tanpatsuStreak: 0,         // 単発の連続回数
+  enzokuMissStreak: 0,       // 先咆哮はずれの連続回数
   lastChainSpins: 0,         // 最後に2連以上したRUSH終了時の通常時総回転数
   log: [],
 };
@@ -108,6 +109,7 @@ function autoSpin(count) {
 
 function handleEnzokuJudge() {
   if (game.pending.type === 'hit') {
+    game.enzokuMissStreak = 0;
     const interval = game.pending.interval;
     game.currentSpins = 0;
     game.lastHitSpins = game.totalSpins;
@@ -116,6 +118,7 @@ function handleEnzokuJudge() {
     addLog(`${interval}回転で大当たり！ 獣王RUSHチャレンジ ＋${FIRST_HIT_ACTUAL}球`, 'win');
     setState('normal_hit_result');
   } else {
+    game.enzokuMissStreak++;
     addLog('はずれ');
     setState('lose_result');
   }
@@ -369,6 +372,7 @@ function resetGame() {
   game.pending         = {};
   game.eigyoAlertShown = false;
   game.tanpatsuStreak  = 0;
+  game.enzokuMissStreak = 0;
   game.lastChainSpins  = 0;
   game.log             = [];
   renderLog();
@@ -578,6 +582,15 @@ function tanpatsuNoticeHtml() {
     前回の連チャンから ${hamari.toLocaleString()}回転ハマり</p>`;
 }
 
+// 先咆哮はずれの連続告知（5回を超えたら＝6回連続目から）
+const ENZOKU_MISS_NOTICE_OVER = 5;
+function enzokuMissNoticeHtml() {
+  const n = game.enzokuMissStreak;
+  if (n <= ENZOKU_MISS_NOTICE_OVER) return '';
+  const prob = Math.pow(1 - ENZOKU_CONFIDENCE / 100, n);
+  return `<p class="rare-note">先咆哮はずれ　${n}回連続中<br>発生率 ${pctText(prob)}%${rareText(prob)}</p>`;
+}
+
 // 2万発超えの出現率
 const BIG_PAYOUT_NOTICE = 20000;
 function bigPayoutHtml(label, prob) {
@@ -605,6 +618,7 @@ function buildScreen(state) {
     case 'lose_result':
       return `<div class="screen">
         <p class="result-main lose">はずれ</p>
+        ${enzokuMissNoticeHtml()}
         <button class="btn-sub" onclick="backToNormal()" style="margin-top:8px;">続ける</button>
       </div>`;
 
