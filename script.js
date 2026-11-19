@@ -630,7 +630,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="result-main lose">はずれ</p>
         ${enzokuMissNoticeHtml()}
-        <button class="btn-sub" onclick="backToNormal()" style="margin-top:8px;">続ける</button>
+        <button class="btn-sub" onclick="backToNormal()">続ける</button>
       </div>`;
 
     case 'normal_hit_result':
@@ -663,9 +663,9 @@ function buildScreen(state) {
 
     case 'rush_entry_lose':
       return `<div class="screen">
-        <p class="result-main lose" style="font-size:26px;">チャレンジ失敗…</p>
+        <p class="result-main lose small">チャレンジ失敗…</p>
         ${tanpatsuNoticeHtml()}
-        <button class="btn-sub" onclick="handleAfterRushEntry()" style="margin-top:12px;">続ける</button>
+        <button class="btn-sub" onclick="handleAfterRushEntry()">続ける</button>
       </div>`;
 
     case 'rush_idle': {
@@ -688,8 +688,8 @@ function buildScreen(state) {
     case 'rush_miss':
       return `<div class="screen">
         <p class="result-main lose">外れ</p>
-        <p style="color:#c8102e; font-size:18px; margin-top:4px;">ST残り ${game.rush.stRemaining}回</p>
-        <button class="btn-sub" onclick="handleRushMissContinue()" style="margin-top:12px;">続ける</button>
+        <p class="st-left">ST残り ${game.rush.stRemaining}回</p>
+        <button class="btn-sub" onclick="handleRushMissContinue()">続ける</button>
       </div>`;
 
     case 'charge':
@@ -703,7 +703,7 @@ function buildScreen(state) {
         <p class="chain-label">${game.rush.chainCount + 1}連チャン</p>
         <div class="vibun-box rush-box">
           <p class="bonus-main ${cls}">${title}</p>
-          <p class="bonus-sub" style="font-size:20px; font-weight:bold; color:#c9a227;">${nominal.toLocaleString()}発</p>
+          <p class="bonus-sub nominal">${nominal.toLocaleString()}発</p>
           <p class="bonus-sub">＋${actual.toLocaleString()}球獲得</p>
         </div>
         ${nominal > BIG_PAYOUT_NOTICE ? bigPayoutHtml(`${nominal.toLocaleString()}発以上になる確率`, chargeAtLeastProbability(nominal)) : ''}
@@ -733,19 +733,19 @@ function buildScreen(state) {
         ${chainNoticeHtml(game.rush.chainCount + 1)}
         ${s.nominal > BIG_PAYOUT_NOTICE ? bigPayoutHtml(`ST合計 ${s.nominal.toLocaleString()}発以上になる確率`, rushTotalAtLeastProbability(s.nominal)) : ''}
         ${tanpatsuNoticeHtml()}
-        <button class="btn-action" onclick="handleRushResultEnd()" style="margin-top:16px;">▶ 通常へ戻る</button>
+        <button class="btn-action" onclick="handleRushResultEnd()">▶ 通常へ戻る</button>
       </div>`;
     }
 
     case 'eigyo_alert':
       return `<div class="screen">
-        <p style="font-size:22px; font-weight:bold; color:#c8102e; text-align:center; line-height:1.6;">
+        <p class="notice-title">
           営業時間終了になりました
         </p>
-        <p style="font-size:16px; color:#666; text-align:center;">このまま居座り続けますか？</p>
-        <div style="display:flex; gap:16px; margin-top:8px; width:100%; max-width:300px;">
-          <button class="btn-action" style="flex:1;" onclick="handleEigyoHai()">はい</button>
-          <button class="btn-action" style="flex:1; background:linear-gradient(135deg,#999,#666); border-color:#ccc;"
+        <p class="notice-sub">このまま居座り続けますか？</p>
+        <div class="notice-btns">
+          <button class="btn-action" onclick="handleEigyoHai()">はい</button>
+          <button class="btn-action quiet"
             onclick="handleEigyoIie()">いいえ</button>
         </div>
       </div>`;
@@ -754,23 +754,23 @@ function buildScreen(state) {
       const mochi    = Math.floor(game.mochiDama);
       const mochiYen = mochi * 4;
       const shuushi  = mochiYen - game.toushi;
-      const shuushiColor = shuushi >= 0 ? '#2e9e5b' : '#d24141';
+      const shuushiCls = shuushi >= 0 ? 'win' : 'loss';
       const shuushiSign  = shuushi >= 0 ? '＋' : '';
       const a = game.allRushStats;
       return `<div class="screen">
-        <p style="font-size:24px; font-weight:bold; color:#666;">退店します</p>
-        <div class="rush-result-box" style="max-width:320px;">
-          <p class="rr-section" style="margin-bottom:8px;">収支発表</p>
+        <p class="leave-title">退店します</p>
+        <div class="rush-result-box">
+          <p class="rr-section">収支発表</p>
           ${resultRow('総回転数', `${game.totalSpins.toLocaleString()}回`)}
           <div class="result-row">
             <span class="rr-label">投資金額</span>
-            <span class="rr-val" style="color:#d24141;">${game.toushi.toLocaleString()}円</span>
+            <span class="rr-val loss">${game.toushi.toLocaleString()}円</span>
           </div>
           ${resultRow('持ち球換算', `${mochiYen.toLocaleString()}円`)}
           <hr class="result-hr">
           <div class="result-row highlight">
-            <span class="rr-label" style="font-weight:bold;">収支</span>
-            <span class="rr-val" style="color:${shuushiColor}; font-size:22px;">
+            <span class="rr-label strong">収支</span>
+            <span class="rr-val big ${shuushiCls}">
               ${shuushiSign}${shuushi.toLocaleString()}円
             </span>
           </div>
@@ -780,7 +780,7 @@ function buildScreen(state) {
           ${resultRow('RUSH大当たり', `${game.totalRushHits}回`)}
           ${resultRow('サバンナチャンス', `${a.savanna}回`)}
         </div>
-        <button class="btn-action" onclick="resetGame()" style="margin-top:8px;">▶ 最初の画面に戻る</button>
+        <button class="btn-action" onclick="resetGame()">▶ 最初の画面に戻る</button>
       </div>`;
     }
 
