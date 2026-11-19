@@ -612,16 +612,28 @@ function buildChargeScreen() {
   else if (c.phase === 'gai_recharge') message += '<br>保留切れ → <b>チャージしろ！</b>';
   else if (c.phase === 'done') message += '<br>保留切れ → 終了';
 
+  // サバンナチャンス中の上乗せ表記：
+  //   再チャージ権利あり＆残り保留に当たりなし → 上乗せ待機中（保留切れ後の再チャージ当該で＋1500確定）
+  //   それ以外（終了前）→ 上乗せ抽選中
+  let savannaStatus = '';
+  if (isSavanna && c.phase !== 'done') {
+    const waiting = c.recharge && !c.holds.some(Boolean);
+    savannaStatus = waiting
+      ? `<p class="bonus-title">上乗せ待機中</p>`
+      : `<p class="uwanose-lottery">上乗せ抽選中</p>`;
+  }
+
   const title = c.phase === 'gai_initial'
     ? `<p class="zugara-title">図柄揃い！</p><p class="charge-title">チャージしろ！</p>`
     : c.phase === 'gai_recharge'
       ? `<p class="charge-title">チャージしろ！</p>`
-      : v.bonus
+      : (!isSavanna && v.bonus)
         ? `<p class="bonus-title">上乗せ！</p>`
         : '';  // 保留消化中・終了時は見出しなし
 
   return `<div class="screen">
     ${banner}
+    ${savannaStatus}
     ${title}
     <div class="charge-meta">
       <span>大当たり ${c.hits}回</span>
