@@ -23,6 +23,7 @@ const game = {
   tanpatsuStreak: 0,         // 単発の連続回数
   enzokuMissStreak: 0,       // 先咆哮はずれの連続回数
   lastChainSpins: 0,         // 最後に2連以上したRUSH終了時の通常時総回転数
+  hitHistory: [],            // 大当たり履歴 [{games, chain}]（新しい順。chain=null は結果待ち）
   log: [],
 };
 
@@ -111,6 +112,7 @@ function handleEnzokuJudge() {
   if (game.pending.type === 'hit') {
     game.enzokuMissStreak = 0;
     const interval = game.pending.interval;
+    game.hitHistory.unshift({ games: interval, chain: null });
     game.currentSpins = 0;
     game.lastHitSpins = game.totalSpins;
     game.lastHitToushi = game.toushi;
@@ -145,6 +147,7 @@ function handleRushEntryJudge() {
   } else {
     game.normalHitCounts.single++;
     game.tanpatsuStreak++;
+    setLatestHitChain(1);
     addLog('獣王RUSHチャレンジ失敗…');
     setState('rush_entry_lose');
   }
@@ -172,6 +175,7 @@ function runRushSpin(opts = {}) {
   }
 
   if (outcome === 'st_end') {
+    setLatestHitChain(game.rush.chainCount + 1);
     // 1連(ST中の当たりなし)で終われば単発、2連以上なら単発カウントとハマり起点をリセット
     if (game.rush.chainCount === 0) {
       game.tanpatsuStreak++;
@@ -374,6 +378,7 @@ function resetGame() {
   game.tanpatsuStreak  = 0;
   game.enzokuMissStreak = 0;
   game.lastChainSpins  = 0;
+  game.hitHistory      = [];
   game.log             = [];
   renderLog();
   render();
@@ -391,6 +396,40 @@ function render() {
   renderModeBadge();
   renderMainScreen();
   renderRushStats();
+  renderHitHistory();
+}
+
+function setLatestHitChain(chain) {
+  if (game.hitHistory.length && game.hitHistory[0].chain === null) game.hitHistory[0].chain = chain;
+}
+
+// ---- 大当たり履歴グラフ ----
+// 1ブロック=100回転、700回転以上は7ブロック＋▲。左が新しく、横スクロールで過去へ。
+const HIST_BLOCK = 100;
+const HIST_MAX_BLOCKS = 7;
+
+function histColHtml(cls, games, typeLabel, idxLabel) {
+  const blocks = Math.min(HIST_MAX_BLOCKS, Math.max(1, Math.ceil(games / HIST_BLOCK)));
+  const more = games >= HIST_BLOCK * HIST_MAX_BLOCKS ? '<div class="hist-more">▲</div>' : '';
+  return `<div class="hist-col ${cls}">
+    <div class="hist-g">${games}</div>${more}
+    ${'<div class="hist-block"></div>'.repeat(blocks)}
+    <div class="hist-type">${typeLabel}</div>
+    <div class="hist-idx">${idxLabel}</div>
+  </div>`;
+}
+
+function renderHitHistory() {
+  const el = document.getElementById('hist-cols');
+  if (!el) return;
+  let html = histColHtml('now', game.currentSpins, '現在', '');
+  game.hitHistory.forEach((h, i) => {
+    const cls = h.chain === null ? 'pending' : h.chain >= 10 ? 'big-chain' : h.chain >= 2 ? 'chain' : 'single';
+    const label = h.chain === null ? '…' : h.chain >= 2 ? `${h.chain}連` : '単発';
+    html += histColHtml(cls, h.games, label, `${i + 1}`);
+  });
+  if (game.hitHistory.length === 0) html += '<div class="hist-empty">まだ大当たりがありません</div>';
+  el.innerHTML = html;
 }
 
 function renderHeader() {

@@ -734,3 +734,29 @@ button:focus-visible, select:focus-visible {
   .reveal-win > *, .reveal-lose, .reveal-lose > * { animation: none; }
   .screen { animation: none; }
 }
+
+/* ---- 大当たり履歴グラフ ---- */
+#hist-area { background: #1b0e0b; border-top: 1px solid #2c1812; padding: 6px 10px 8px; flex-shrink: 0; }
+.hist-title { font-size: 10px; color: var(--dim); letter-spacing: 1px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+.hist-body { display: flex; }
+.hist-axis { display: flex; flex-direction: column-reverse; width: 26px; flex-shrink: 0; padding-bottom: 30px; }
+.hist-axis span { height: 16px; font-size: 8px; color: var(--dim); text-align: right; padding-right: 3px; line-height: 16px; transform: translateY(8px); }
+.hist-scroll { flex: 1; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.hist-scroll::-webkit-scrollbar { height: 4px; }
+.hist-scroll::-webkit-scrollbar-thumb { background: var(--earth-hi); border-radius: 2px; }
+.hist-cols { display: flex; gap: 4px; min-height: 160px; padding-bottom: 2px; }
+.hist-col { width: 26px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.hist-g { font-size: 8px; color: var(--dust); margin-bottom: 2px; white-space: nowrap; }
+.hist-more { font-size: 10px; line-height: 10px; margin-bottom: 1px; color: var(--dust); }
+.hist-block { width: 22px; height: 14px; margin-top: 2px; border-radius: 2px; background: var(--earth-hi); }
+.hist-col.single .hist-block    { background: linear-gradient(180deg, #8fb0ec, #3f66b8); }
+.hist-col.chain .hist-block     { background: linear-gradient(180deg, #e2554b, var(--mane-deep)); }
+.hist-col.big-chain .hist-block { background: linear-gradient(180deg, var(--gold-pale), var(--gold)); box-shadow: 0 0 4px rgba(227,169,43,0.6); }
+.hist-col.pending .hist-block   { background: var(--earth); }
+.hist-col.now .hist-block       { background: transparent; border: 1px dashed var(--dim); }
+.hist-type { margin-top: 4px; font-size: 9px; font-weight: bold; height: 12px; white-space: nowrap; color: var(--dust); }
+.hist-col.single .hist-type    { color: #8fb0ec; }
+.hist-col.chain .hist-type     { color: #ff7a66; }
+.hist-col.big-chain .hist-type { color: var(--gold); }
+.hist-idx { font-size: 8px; color: var(--dim); height: 12px; }
+.hist-empty { font-size: 10px; color: var(--dim); padding: 20px 4px; }
