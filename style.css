@@ -568,3 +568,15 @@ body {
 
 .bonus-main.savanna { color: #c9a227; font-size: 26px; }
 .log-item.sc { color: #8a6d10; font-weight: bold; }
+
+/* 出現率・希少性の表示 */
+.rare-note {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.6;
+  color: #c9a227;
+}
+.hit-interval { margin: 0 0 4px; text-align: center; font-size: 14px; color: #999; }
+.hit-interval span { font-size: 20px; font-weight: bold; color: #c9a227; }

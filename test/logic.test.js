@@ -257,3 +257,17 @@ test('表記の割合: or 3000 が約1/3', () => {
   const r = n3000 / N;
   assert.ok(r > 0.31 && r < 0.36, String(r));
 });
+
+test('チャージ・RUSH合計の出玉分布は合計1、2万発以上の確率は妥当な範囲', () => {
+  const cd = L.computeChargeHitsDist();
+  const sum = cd.reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(sum - 1) < 1e-9);
+  const p = L.chargeAtLeastProbability(21000);
+  assert.ok(p > 0.03 && p < 0.04);
+  const r = L.rushTotalAtLeastProbability(20100);
+  assert.ok(r > 0.085 && r < 0.1);
+});
+
+test('単発の確率 = チャレンジ失敗50% + 突入後1連', () => {
+  assert.ok(Math.abs(L.P_TANPATSU - (0.5 + 0.5 * (1 - L.P_ST_HIT))) < 1e-12);
+});

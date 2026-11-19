@@ -20,6 +20,8 @@ const game = {
   chargeView: null,          // チャージ画面の表示用
   pending: {},
   eigyoAlertShown: false,
+  tanpatsuStreak: 0,         // 単発の連続回数
+  lastChainSpins: 0,         // 最後に2連以上したRUSH終了時の通常時総回転数
   log: [],
 };
 
@@ -139,6 +141,7 @@ function handleRushEntryJudge() {
     setState('rush_entry_win');
   } else {
     game.normalHitCounts.single++;
+    game.tanpatsuStreak++;
     addLog('獣王RUSHチャレンジ失敗…');
     setState('rush_entry_lose');
   }
@@ -166,6 +169,13 @@ function runRushSpin(opts = {}) {
   }
 
   if (outcome === 'st_end') {
+    // 1連(ST中の当たりなし)で終われば単発、2連以上なら単発カウントとハマり起点をリセット
+    if (game.rush.chainCount === 0) {
+      game.tanpatsuStreak++;
+    } else {
+      game.tanpatsuStreak = 0;
+      game.lastChainSpins = game.totalSpins;
+    }
     addLog('ST100回転終了 → RUSH終了');
     setState('rush_result');
     return true;
@@ -358,6 +368,8 @@ function resetGame() {
   game.chargeView      = null;
   game.pending         = {};
   game.eigyoAlertShown = false;
+  game.tanpatsuStreak  = 0;
+  game.lastChainSpins  = 0;
   game.log             = [];
   renderLog();
   render();
@@ -536,6 +548,42 @@ function buildChargeScreen() {
   </div>`;
 }
 
+// ---- 出現率の表示 ----
+function pctText(prob) {
+  const pct = prob * 100;
+  return pct >= 1 ? pct.toFixed(1) : pct >= 0.01 ? pct.toFixed(2) : pct.toPrecision(2);
+}
+function rareText(prob) {
+  return prob * 100 < 1 ? `<br>約${Math.round(1 / prob).toLocaleString()}回に1回の割合です` : '';
+}
+
+// 初当たりの回転数。1000回転超・100回転未満はその出現率も表示
+function hitIntervalHtml(n) {
+  let prob = null, label = '';
+  if (n > 1000) { prob = hitIntervalProbability(n).atLeast; label = `${n.toLocaleString()}回転以上ハマる確率`; }
+  else if (n < 100) { prob = hitIntervalProbability(n).within; label = `${n}回転以内に当たる確率`; }
+  const probHtml = prob === null ? '' :
+    `<p class="rare-note">${label} ${pctText(prob)}%${rareText(prob)}</p>`;
+  return `<p class="hit-interval"><span>${n.toLocaleString()}</span>回転</p>${probHtml}`;
+}
+
+// 単発の連続告知（7回連続目から）。前回の連チャンからのハマり回転数も表示
+const TANPATSU_NOTICE_MIN = 7;
+function tanpatsuNoticeHtml() {
+  const n = game.tanpatsuStreak;
+  if (n < TANPATSU_NOTICE_MIN) return '';
+  const prob = tanpatsuStreakProbability(n);
+  const hamari = game.totalSpins - game.lastChainSpins;
+  return `<p class="rare-note">単発　${n}回連続中<br>発生率 ${pctText(prob)}%${rareText(prob)}<br>
+    前回の連チャンから ${hamari.toLocaleString()}回転ハマり</p>`;
+}
+
+// 2万発超えの出現率
+const BIG_PAYOUT_NOTICE = 20000;
+function bigPayoutHtml(label, prob) {
+  return `<p class="rare-note">${label} ${pctText(prob)}%${rareText(prob)}</p>`;
+}
+
 function resultRow(label, value, cls = '') {
   return `<div class="result-row"><span class="rr-label">${label}</span><span class="rr-val ${cls}">${value}</span></div>`;
 }
@@ -562,6 +610,7 @@ function buildScreen(state) {
 
     case 'normal_hit_result':
       return `<div class="screen">
+        ${hitIntervalHtml(game.pending.interval)}
         <div class="vibun-box">
           <p class="bonus-main standard">大当たり！</p>
           <p class="bonus-sub">獣王RUSHチャレンジ（2R・${FIRST_HIT_NOMINAL}発）</p>
@@ -590,6 +639,7 @@ function buildScreen(state) {
     case 'rush_entry_lose':
       return `<div class="screen">
         <p class="result-main lose" style="font-size:26px;">チャレンジ失敗…</p>
+        ${tanpatsuNoticeHtml()}
         <button class="btn-sub" onclick="handleAfterRushEntry()" style="margin-top:12px;">続ける</button>
       </div>`;
 
@@ -631,6 +681,7 @@ function buildScreen(state) {
           <p class="bonus-sub" style="font-size:20px; font-weight:bold; color:#c9a227;">${nominal.toLocaleString()}発</p>
           <p class="bonus-sub">＋${actual.toLocaleString()}球獲得</p>
         </div>
+        ${nominal > BIG_PAYOUT_NOTICE ? bigPayoutHtml(`${nominal.toLocaleString()}発以上になる確率`, chargeAtLeastProbability(nominal)) : ''}
         <button class="btn-action" onclick="handleChargeResultContinue()">▶ 獣王RUSHへ</button>
       </div>`;
     }
@@ -654,6 +705,8 @@ function buildScreen(state) {
           <p class="rr-section">ボーナス内訳</p>
           ${lines.join('')}
         </div>
+        ${s.nominal > BIG_PAYOUT_NOTICE ? bigPayoutHtml(`ST合計 ${s.nominal.toLocaleString()}発以上になる確率`, rushTotalAtLeastProbability(s.nominal)) : ''}
+        ${tanpatsuNoticeHtml()}
         <button class="btn-action" onclick="handleRushResultEnd()" style="margin-top:16px;">▶ 通常へ戻る</button>
       </div>`;
     }

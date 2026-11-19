@@ -177,6 +177,106 @@ function rollJudgeLabel(kind, rng = Math.random) {
   return JUDGE_LABEL_1500;
 }
 
+// ---- 出現率の計算 ----
+
+// 通常時：n回転目で当たった時の出現率
+// atLeast: n回転以上かかる確率 = (1-p)^(n-1) ／ within: n回転以内に当たる確率 = 1-(1-p)^n
+function hitIntervalProbability(n) {
+  return {
+    atLeast: Math.pow(1 - P_HIT, n - 1),
+    within: 1 - Math.pow(1 - P_HIT, n),
+  };
+}
+
+// ST100回転中に1回以上当たる確率（約50%）
+const P_ST_HIT = 1 - Math.pow(1 - P_RUSH, RUSH_ST_COUNT);
+
+// 単発：RUSHチャレンジ失敗 or RUSH突入後1連(ST中の当たりなし)で終了
+const P_TANPATSU = (1 - P_RUSH_ENTRY) + P_RUSH_ENTRY * (1 - P_ST_HIT);
+function tanpatsuStreakProbability(n) {
+  return Math.pow(P_TANPATSU, n);
+}
+
+// チャージ1回の当たり数(hits)の確率分布を、状態(残り保留数・権利)の遷移から厳密に計算する。
+// 保留の当否は1個ずつ独立なので、消化時に抽選しても分布は同じ。
+const DIST_MAX_HITS = 600;
+function computeChargeHitsDist() {
+  const dist = new Float64Array(DIST_MAX_HITS + 1);
+  let active = new Map([[`1,4,0`, 1]]);
+  let guard = 0;
+  while (active.size && guard++ < 100000) {
+    const next = new Map();
+    const add = (h, k, r, m) => {
+      if (m < 1e-18) return;
+      if (h > DIST_MAX_HITS) return;
+      const key = `${h},${k},${r}`;
+      next.set(key, (next.get(key) || 0) + m);
+    };
+    for (const [key, m] of active) {
+      const [h, k, r] = key.split(',').map(Number);
+      if (k === 0) {
+        if (r) { add(h + 1, 4, 1, m * P_RECHARGE); add(h + 1, 4, 0, m * (1 - P_RECHARGE)); }
+        else dist[h] += m;
+        continue;
+      }
+      add(h + 1, 4, 1, m * P_CHARGE * P_RECHARGE);
+      add(h + 1, k - 1, 0, m * P_CHARGE * (1 - P_RECHARGE));
+      add(h, k - 1, r, m * (1 - P_CHARGE));
+    }
+    active = next;
+  }
+  return dist;
+}
+
+// RUSH1回(突入〜ST終了)の合計当たり数の分布。ST中の当たり回数Kは q^K(1-q)、各当たりがチャージ1回。
+function computeRushHitsDist(chargeDist) {
+  const N = DIST_MAX_HITS;
+  const total = new Float64Array(N + 1);
+  let conv = new Float64Array(N + 1);
+  conv[0] = 1;
+  let weight = 1 - P_ST_HIT;
+  for (let k = 0; k < 200 && weight > 1e-18; k++) {
+    for (let i = 0; i <= N; i++) total[i] += weight * conv[i];
+    const nextConv = new Float64Array(N + 1);
+    for (let i = 0; i <= N; i++) {
+      if (conv[i] === 0) continue;
+      for (let j = 1; i + j <= N; j++) nextConv[i + j] += conv[i] * chargeDist[j];
+    }
+    conv = nextConv;
+    weight *= P_ST_HIT;
+  }
+  return total;
+}
+
+function tailFrom(dist) {
+  const tail = new Float64Array(dist.length + 1);
+  for (let i = dist.length - 1; i >= 0; i--) tail[i] = tail[i + 1] + dist[i];
+  return tail;
+}
+
+let _chargeTail = null;
+let _rushTail = null;
+function ensureTails() {
+  if (_chargeTail) return;
+  const chargeDist = computeChargeHitsDist();
+  _chargeTail = tailFrom(chargeDist);
+  _rushTail = tailFrom(computeRushHitsDist(chargeDist));
+}
+
+// チャージ1回(RUSH中の当たり1回)で、表示出玉がnominal発以上になる確率
+function chargeAtLeastProbability(nominal) {
+  ensureTails();
+  const hits = Math.ceil(nominal / CHARGE_HIT_NOMINAL);
+  return hits >= _chargeTail.length ? 0 : _chargeTail[Math.max(0, hits)];
+}
+
+// RUSH1回(突入1回あたり)のST合計表示出玉(初当たり300発込み)がnominal発以上になる確率
+function rushTotalAtLeastProbability(nominal) {
+  ensureTails();
+  const hits = Math.ceil((nominal - FIRST_HIT_NOMINAL) / CHARGE_HIT_NOMINAL);
+  return hits >= _rushTail.length ? 0 : _rushTail[Math.max(0, hits)];
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     SPIN_RATE_OPTIONS, DEFAULT_SPIN_RATE, calcSpinCost,
@@ -186,5 +286,7 @@ if (typeof module !== 'undefined' && module.exports) {
     P_CHARGE, P_RECHARGE, HOLD_MAX, CHARGE_HIT_NOMINAL, CHARGE_HIT_ACTUAL, SAVANNA_THRESHOLD,
     rollUntilHit, fillHolds, classifyCharge, createChargeState, applyChargeStep,
     P_SC_LABEL_3000, JUDGE_LABEL_1500, JUDGE_LABEL_3000, planCharge, rollJudgeLabel,
+    hitIntervalProbability, P_ST_HIT, P_TANPATSU, tanpatsuStreakProbability,
+    computeChargeHitsDist, computeRushHitsDist, chargeAtLeastProbability, rushTotalAtLeastProbability,
   };
 }
