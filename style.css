@@ -515,7 +515,128 @@ button:focus-visible, select:focus-visible {
 .hit-interval { margin: 0 0 4px; text-align: center; font-size: 14px; color: var(--dust); }
 .hit-interval span { font-family: var(--font-display); font-size: 22px; color: var(--gold); margin-right: 2px; }
 
+/* ========== 勝負ボタン（チャレンジ／judgment） ========== */
+.btn-hype {
+  position: relative;
+  overflow: visible;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  /* 表面を走る光 */
+  background:
+    linear-gradient(105deg, transparent 38%, rgba(255, 236, 190, 0.55) 50%, transparent 62%) no-repeat,
+    radial-gradient(circle at 50% 30%, #d6382b, var(--mane) 60%, var(--mane-deep));
+  background-size: 260% 100%, 100% 100%;
+  box-shadow: inset 0 -4px 0 var(--mane-deep), 0 0 0 2px var(--gold) inset, 0 0 22px rgba(227, 169, 43, 0.35);
+  animation: hype-beat 1.2s ease-in-out infinite, hype-shine 2.4s linear infinite;
+}
+/* 鼓動に合わせて広がる金の輪 */
+.btn-hype::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--gold);
+  pointer-events: none;
+  animation: hype-ring 1.2s ease-out infinite;
+}
+@keyframes hype-beat {
+  0%, 100% { transform: scale(1); }
+  12%      { transform: scale(1.06); }
+  24%      { transform: scale(0.99); }
+  36%      { transform: scale(1.08); }
+  56%      { transform: scale(1); }
+}
+@keyframes hype-shine {
+  0%   { background-position: 130% 0, 0 0; }
+  60%, 100% { background-position: -30% 0, 0 0; }
+}
+@keyframes hype-ring {
+  0%, 30% { transform: scale(1); opacity: 0.9; }
+  100%    { transform: scale(1.12, 1.9); opacity: 0; }
+}
+
+/* 押さえている間：沈んで震える（溜め） */
+.btn-hype:active {
+  animation: hype-tremble 0.07s linear infinite;
+  filter: brightness(1.15);
+  box-shadow: inset 0 -1px 0 var(--mane-deep), 0 0 0 2px var(--gold-pale) inset, 0 0 36px rgba(227, 169, 43, 0.6);
+}
+.btn-hype:active::after { animation: none; opacity: 0; }
+@keyframes hype-tremble {
+  0%   { transform: translate(0, 2px) scale(0.95); }
+  25%  { transform: translate(-2px, 1px) scale(0.95) rotate(-0.6deg); }
+  50%  { transform: translate(2px, 3px) scale(0.95); }
+  75%  { transform: translate(-1px, 2px) scale(0.95) rotate(0.6deg); }
+  100% { transform: translate(0, 2px) scale(0.95); }
+}
+
+/* 離した瞬間：弾ける */
+.btn-hype.fired {
+  animation: hype-fire 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+  pointer-events: none;
+}
+.btn-hype.fired::after { animation: none; opacity: 0; }
+@keyframes hype-fire {
+  0%   { transform: scale(0.9);  filter: brightness(1); }
+  25%  { transform: scale(1.16); filter: brightness(1.9) saturate(1.3); }
+  100% { transform: scale(1.04); filter: brightness(1.2); }
+}
+.hype-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.hype-burst::before {
+  content: "";
+  position: absolute;
+  left: -150px; top: -30px; width: 300px; height: 60px;
+  border-radius: 8px;
+  border: 3px solid var(--gold-pale);
+  animation: hype-shock 0.5s ease-out forwards;
+}
+@keyframes hype-shock {
+  from { transform: scale(1); opacity: 1; }
+  to   { transform: scale(1.35, 2.6); opacity: 0; }
+}
+.hype-burst i {
+  position: absolute;
+  left: -2px; top: -9px;
+  width: 4px; height: 18px;
+  border-radius: 2px;
+  background: linear-gradient(var(--gold-pale), var(--gold));
+  transform: rotate(var(--a)) translateY(0);
+  animation: hype-spark 0.5s ease-out forwards;
+}
+@keyframes hype-spark {
+  from { transform: rotate(var(--a)) translateY(-30px) scaleY(1.4); opacity: 1; }
+  to   { transform: rotate(var(--a)) translateY(calc(-1 * var(--d) - 40px)) scaleY(0.3); opacity: 0; }
+}
+
+/* 画面の揺れと閃光 */
+#main-screen.shake { animation: screen-shake 0.4s ease-out; }
+@keyframes screen-shake {
+  0%   { transform: translate(0, 0); }
+  15%  { transform: translate(-6px, 3px); }
+  30%  { transform: translate(5px, -4px); }
+  45%  { transform: translate(-4px, 2px); }
+  60%  { transform: translate(3px, -1px); }
+  80%  { transform: translate(-1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+.hype-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 55%, rgba(246, 213, 138, 0.55), rgba(179, 38, 30, 0.25) 45%, transparent 75%);
+  animation: hype-flash 0.6s ease-out forwards;
+}
+@keyframes hype-flash {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .btn-start::before, .payout-num.rainbow, .bonus-title { animation: none; }
+  .btn-start::before, .payout-num.rainbow, .bonus-title,
+  .btn-hype, .btn-hype::after, .btn-hype:active { animation: none; }
   .screen { animation: none; }
 }

@@ -443,6 +443,39 @@ function renderModeBadge() {
   }
 }
 
+// 勝負ボタン：押した瞬間に弾ける演出を見せてから結果へ進む
+const HYPE_DELAY_MS = 520;
+function hype(btn, fn) {
+  if (btn.dataset.fired) return;
+  btn.dataset.fired = '1';
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { fn(); return; }
+
+  btn.classList.add('fired');
+  const burst = document.createElement('span');
+  burst.className = 'hype-burst';
+  for (let i = 0; i < 14; i++) {
+    const spark = document.createElement('i');
+    spark.style.setProperty('--a', `${(360 / 14) * i + Math.random() * 12}deg`);
+    spark.style.setProperty('--d', `${70 + Math.random() * 60}px`);
+    burst.appendChild(spark);
+  }
+  btn.appendChild(burst);
+
+  const screen = document.getElementById('main-screen');
+  screen.classList.remove('shake');
+  void screen.offsetWidth;
+  screen.classList.add('shake');
+
+  const flash = document.createElement('div');
+  flash.className = 'hype-flash';
+  document.getElementById('app').appendChild(flash);
+  setTimeout(() => flash.remove(), 700);
+
+  if (navigator.vibrate) navigator.vibrate([30, 40, 70]);
+  setTimeout(() => { screen.classList.remove('shake'); fn(); }, HYPE_DELAY_MS);
+}
+
 function renderMainScreen() {
   document.getElementById('main-screen').innerHTML = buildScreen(game.state);
 }
@@ -513,7 +546,7 @@ function buildChargeScreen() {
     ${buildPayoutHtml(c.nominal, c.holds, c.recharge)}
     <div class="charge-event">${v.message}</div>
     <p class="judge-label">${v.label}</p>
-    <div class="charge-btns"><button class="btn-action btn-judge" onclick="handleJudgment()">judgment</button></div>
+    <div class="charge-btns"><button class="btn-action btn-judge btn-hype" onclick="hype(this, handleJudgment)">judgment</button></div>
   </div>`;
   }
 
@@ -648,7 +681,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="add-rush-title">獣王RUSHチャレンジ！</p>
         <p class="result-sub">成功率 ${Math.round(P_RUSH_ENTRY * 100)}%</p>
-        <button class="btn-action" onclick="handleRushEntryJudge()">▶ チャレンジ</button>
+        <button class="btn-action btn-hype" onclick="hype(this, handleRushEntryJudge)">▶ チャレンジ</button>
       </div>`;
 
     case 'rush_entry_win':
