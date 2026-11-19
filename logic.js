@@ -277,6 +277,33 @@ function rushTotalAtLeastProbability(nominal) {
   return hits >= _rushTail.length ? 0 : _rushTail[Math.max(0, hits)];
 }
 
+// RUSHのN連(初当たり込み)に関する確率と平均出玉
+// ST中の当たり回数k = N-1。exact = q^k(1-q)、atLeast = q^k。
+function rushChainProbability(totalChain) {
+  const k = Math.max(0, totalChain - 1);
+  const atLeast = Math.pow(P_ST_HIT, k);
+  return { exact: atLeast * (1 - P_ST_HIT), atLeast };
+}
+
+let _meanChargeHits = null;
+function meanChargeHits() {
+  if (_meanChargeHits === null) {
+    const d = computeChargeHitsDist();
+    _meanChargeHits = d.reduce((sum, p, h) => sum + p * h, 0);
+  }
+  return _meanChargeHits;
+}
+
+// N連したRUSHの平均出玉（初当たり2R込み）。nominal=表示出玉(発)、actual=実獲得(球)
+function rushChainMeanBalls(totalChain) {
+  const k = Math.max(0, totalChain - 1);
+  const h = meanChargeHits();
+  return {
+    nominal: FIRST_HIT_NOMINAL + k * h * CHARGE_HIT_NOMINAL,
+    actual: FIRST_HIT_ACTUAL + k * h * CHARGE_HIT_ACTUAL,
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     SPIN_RATE_OPTIONS, DEFAULT_SPIN_RATE, calcSpinCost,
@@ -288,5 +315,6 @@ if (typeof module !== 'undefined' && module.exports) {
     P_SC_LABEL_3000, JUDGE_LABEL_1500, JUDGE_LABEL_3000, planCharge, rollJudgeLabel,
     hitIntervalProbability, P_ST_HIT, P_TANPATSU, tanpatsuStreakProbability,
     computeChargeHitsDist, computeRushHitsDist, chargeAtLeastProbability, rushTotalAtLeastProbability,
+    rushChainProbability, meanChargeHits, rushChainMeanBalls,
   };
 }

@@ -591,6 +591,17 @@ function enzokuMissNoticeHtml() {
   return `<p class="rare-note">先咆哮はずれ　${n}回連続中<br>発生率 ${pctText(prob)}%${rareText(prob)}</p>`;
 }
 
+// RUSHが5連以上した時：その連チャンの確率と、その連チャン数の平均出玉
+const CHAIN_NOTICE_MIN = 5;
+function chainNoticeHtml(totalChain) {
+  if (totalChain < CHAIN_NOTICE_MIN) return '';
+  const { exact, atLeast } = rushChainProbability(totalChain);
+  const mean = rushChainMeanBalls(totalChain);
+  return `<p class="rare-note">${totalChain}連で終わる確率 ${pctText(exact)}%${rareText(exact)}<br>
+    ${totalChain}連以上に届く確率 ${pctText(atLeast)}%${rareText(atLeast)}<br>
+    ${totalChain}連の平均出玉 約${Math.round(mean.actual).toLocaleString()}球（表示 約${Math.round(mean.nominal).toLocaleString()}発）</p>`;
+}
+
 // 2万発超えの出現率
 const BIG_PAYOUT_NOTICE = 20000;
 function bigPayoutHtml(label, prob) {
@@ -719,6 +730,7 @@ function buildScreen(state) {
           <p class="rr-section">ボーナス内訳</p>
           ${lines.join('')}
         </div>
+        ${chainNoticeHtml(game.rush.chainCount + 1)}
         ${s.nominal > BIG_PAYOUT_NOTICE ? bigPayoutHtml(`ST合計 ${s.nominal.toLocaleString()}発以上になる確率`, rushTotalAtLeastProbability(s.nominal)) : ''}
         ${tanpatsuNoticeHtml()}
         <button class="btn-action" onclick="handleRushResultEnd()" style="margin-top:16px;">▶ 通常へ戻る</button>
