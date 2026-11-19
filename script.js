@@ -582,11 +582,11 @@ function tanpatsuNoticeHtml() {
     前回の連チャンから ${hamari.toLocaleString()}回転ハマり</p>`;
 }
 
-// 先咆哮はずれの連続告知（5回を超えたら＝6回連続目から）
-const ENZOKU_MISS_NOTICE_OVER = 5;
+// 先咆哮はずれの連続告知（5回連続目から）
+const ENZOKU_MISS_NOTICE_MIN = 5;
 function enzokuMissNoticeHtml() {
   const n = game.enzokuMissStreak;
-  if (n <= ENZOKU_MISS_NOTICE_OVER) return '';
+  if (n < ENZOKU_MISS_NOTICE_MIN) return '';
   const prob = Math.pow(1 - ENZOKU_CONFIDENCE / 100, n);
   return `<p class="rare-note">先咆哮はずれ　${n}回連続中<br>発生率 ${pctText(prob)}%${rareText(prob)}</p>`;
 }
