@@ -760,3 +760,17 @@ button:focus-visible, select:focus-visible {
 .hist-col.big-chain .hist-type { color: var(--gold); }
 .hist-idx { font-size: 8px; color: var(--dim); height: 12px; }
 .hist-empty { font-size: 10px; color: var(--dim); padding: 20px 4px; }
+
+/* ---- 差玉推移グラフ ---- */
+#slump-area { background: #1b0e0b; border-top: 1px solid #3a2418; padding: 6px 10px 10px; flex-shrink: 0; }
+.slump-title { font-size: 10px; color: #8a6a50; letter-spacing: 1px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.slump-title b.plus { color: #7fd36b; }
+.slump-title b.minus { color: #ff6b5a; }
+#slump-svg { width: 100%; height: 170px; display: block; }
+#slump-svg .sl-grid { stroke: #3a2418; stroke-width: 1; }
+#slump-svg .sl-zero { stroke: #8a6a50; stroke-width: 1; stroke-dasharray: 3 3; }
+#slump-svg .sl-ylab { fill: #8a6a50; font-size: 9px; text-anchor: end; }
+#slump-svg .sl-xlab { fill: #8a6a50; font-size: 9px; text-anchor: middle; }
+#slump-svg .sl-line { fill: none; stroke-width: 1.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+#slump-svg .sl-dot.plus { fill: #7fd36b; }
+#slump-svg .sl-dot.minus { fill: #ff6b5a; }
