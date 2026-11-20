@@ -313,9 +313,9 @@ function handleChargeFinish() {
     a.scSum += nominal;
     a.scMax = Math.max(a.scMax, nominal);
     s.scMax = Math.max(s.scMax, nominal);
-    addLog(`サバンナチャンス ${nominal.toLocaleString()}発 (${game.rush.chainCount}連)`, 'sc');
+    addLog(`サバンナチャンス ${nominal.toLocaleString()}発 (${game.rush.chainCount + 1}連)`, 'sc');
   } else {
-    addLog(`${nominal}ボーナス (${game.rush.chainCount}連)`, 'rush');
+    addLog(`${nominal}ボーナス (${game.rush.chainCount + 1}連)`, 'rush');
   }
   game.pending = { kind, nominal, actual };
   setState('charge_result');
