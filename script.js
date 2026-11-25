@@ -269,6 +269,8 @@ function stepCharge() {
   game.charge = state;
   // サバンナチャンス中に1500発を得たら「上乗せ！」
   v.bonus = v.judged && v.plan.kind === 'savanna' && state.nominal > before.nominal;
+  // 上乗せ演出（獲得球数が浮き上がり、数字が増える）用に、増える前と後を覚える
+  v.upAnim = v.bonus ? { from: before.nominal, to: state.nominal } : null;
   const message = describeChargeEvent(event, state);
   v.message = message;
   v.history.unshift(stripTags(message));
@@ -283,6 +285,7 @@ function handleChargeStep() {
     v.label = rollJudgeLabel(v.plan.kind);
   }
   setState('charge');
+  playSavannaUpAnim();
 }
 
 function handleJudgment() {
@@ -300,6 +303,7 @@ function handleJudgment() {
 function handleChargeSkip() {
   while (game.charge.phase !== 'done') stepCharge();
   setState('charge');
+  playSavannaUpAnim();
 }
 
 function handleChargeFinish() {
@@ -686,6 +690,40 @@ function buildPayoutHtml(nominal, holds, recharge) {
     <p class="${cls}">${nominal.toLocaleString()}<span class="payout-unit">発</span></p>
     <div class="mini-holds">${buildHoldsHtml(holds)}<p class="mini-right ${recharge ? 'on' : ''}">再チャージ権利 ${recharge ? 'あり' : 'なし'}</p></div>
   </div>`;
+}
+
+// サバンナチャンス中の上乗せ：獲得球数がふわっと浮き上がり、数字が増える前から後までカウントアップする
+const SAVANNA_UP_MS = 900;
+function playSavannaUpAnim() {
+  const v = game.chargeView;
+  const anim = v.upAnim;
+  v.upAnim = null;
+  if (!anim) return;
+  const num = document.querySelector('#screen-area .payout-num, .payout-num');
+  if (!num) return;
+  const textNode = num.firstChild;
+  const fmt = n => n.toLocaleString();
+  // 浮き上がる「＋1,500」
+  const area = num.closest('.payout-area');
+  const pop = document.createElement('span');
+  pop.className = 'payout-up-pop';
+  pop.textContent = `＋${fmt(anim.to - anim.from)}`;
+  area.appendChild(pop);
+  setTimeout(() => pop.remove(), 1400);
+  // 数字が浮き上がりながら増える
+  num.classList.remove('payout-up');
+  void num.offsetWidth;
+  num.classList.add('payout-up');
+  const start = performance.now();
+  textNode.nodeValue = fmt(anim.from);
+  const tick = now => {
+    const t = Math.min(1, (now - start) / SAVANNA_UP_MS);
+    const eased = 1 - Math.pow(1 - t, 3);
+    if (!num.isConnected) return;
+    textNode.nodeValue = fmt(Math.round(anim.from + (anim.to - anim.from) * eased));
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
 
 function buildChargeScreen() {
